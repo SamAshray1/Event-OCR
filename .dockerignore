@@ -1,0 +1,24 @@
+# Virtual Environment
+venv/
+.venv/
+env/
+
+# Python cache
+**/__pycache__/
+*.py[cod]
+*$py.class
+
+# IDEs and OS files
+.vscode/
+.idea/
+.git/
+.gitignore
+.DS_Store
+
+# Docker files
+Dockerfile
+.dockerignore
+
+# App data/logs
+*.log
+temp/
