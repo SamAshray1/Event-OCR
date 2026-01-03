@@ -17,7 +17,6 @@ import cv2
 import numpy as np
 
 def extract_text_from_crop(image_bytes: bytes, x, y, w, h):
-    # 1. Decode image
     image_np = np.frombuffer(image_bytes, np.uint8)
     img = cv2.imdecode(image_np, cv2.IMREAD_COLOR)
     
@@ -27,7 +26,6 @@ def extract_text_from_crop(image_bytes: bytes, x, y, w, h):
     img_h, img_w = img.shape[:2]
 
     # 2. Normalize and constraint coordinates
-    # This prevents 'index out of bounds' errors (the 500 error)
     x1 = max(0, int(x))
     y1 = max(0, int(y))
     x2 = min(img_w, x1 + int(abs(w)))
