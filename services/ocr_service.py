@@ -4,7 +4,6 @@ import numpy as np
 import easyocr
 from typing import Dict, Any
 
-# Initialize EasyOCR once (global scope or within a class)
 easyocr_reader = easyocr.Reader(['en'], gpu=False)
 
 OCR_CONFIGS = ["--oem 3 --psm 6", "--oem 3 --psm 11", "--oem 3 --psm 4"]
@@ -52,7 +51,6 @@ def extract_title_from_bboxes(data: Dict[str, Any]) -> str:
     if not candidates:
         return ""
     
-    # Sort by height (descending) to find the largest text
     candidates.sort(key=lambda x: (-x["height"], x["top"]))
     base_top = candidates[0]["top"]
     title_words = [c["text"] for c in candidates if abs(c["top"] - base_top) < 10]
@@ -62,7 +60,6 @@ def extract_title_easyocr(img: np.ndarray) -> str:
     results = easyocr_reader.readtext(img)
     if not results:
         return ""
-    # Find result with largest bounding box height
     results.sort(key=lambda r: abs(r[0][0][1] - r[0][2][1]), reverse=True)
     return results[0][1] if results else ""
 
@@ -80,7 +77,6 @@ def perform_ocr(image_bytes: bytes) -> Dict[str, str]:
     for variant in variants:
         for config in OCR_CONFIGS:
             result = ocr_with_bboxes(variant, config)
-            # Scoring mechanism to find the best OCR pass
             score = result["confidence"] * 0.6 + result["word_count"] * 0.4
             best_score = best_result["confidence"] * 0.6 + best_result["word_count"] * 0.4
             if score > best_score:
@@ -90,7 +86,7 @@ def perform_ocr(image_bytes: bytes) -> Dict[str, str]:
     title = extract_title_from_bboxes(best_result["data"])
     if not title or len(title.strip()) < 3:
         h, w = img.shape[:2]
-        top_crop = img[0:int(h * 0.3), 0:w]  # Look at the top 30% for title
+        top_crop = img[0:int(h * 0.3), 0:w]
         title = extract_title_easyocr(top_crop)
 
     return {

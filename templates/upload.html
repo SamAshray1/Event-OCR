@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Event Extractor - Box Select</title>
+    <style>
+        #canvas-container { position: relative; cursor: crosshair; }
+        canvas { border: 1px solid #000; max-width: 100%; }
+        .controls { margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <h2>1. Select Invitation & 2. Draw Box over Details</h2>
+    <input type="file" id="imageLoader" accept="image/*">
+    
+    <div id="canvas-container">
+        <canvas id="imageCanvas"></canvas>
+    </div>
+
+    <div class="controls">
+        <button onclick="processSelection()">Extract Text from Box</button>
+    </div>
+
+    <div id="result"></div>
+
+    <script>
+        const canvas = document.getElementById('imageCanvas');
+        const ctx = canvas.getContext('2d');
+        let img = new Image();
+        let startX, startY, isDrawing = false;
+        let rect = {};
+
+        document.getElementById('imageLoader').addEventListener('change', (e) => {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                img.onload = () => {
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    ctx.drawImage(img, 0, 0);
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(e.target.files[0]);
+        });
+
+        canvas.onmousedown = (e) => {
+            const pos = getMousePos(e);
+            startX = pos.x; startY = pos.y;
+            isDrawing = true;
+        };
+
+        canvas.onmousemove = (e) => {
+            if (!isDrawing) return;
+            const pos = getMousePos(e);
+            ctx.drawImage(img, 0, 0); // Redraw image
+            ctx.strokeStyle = "red";
+            ctx.lineWidth = 4;
+            ctx.strokeRect(startX, startY, pos.x - startX, pos.y - startY);
+        };
+
+        canvas.onmouseup = (e) => {
+            isDrawing = false;
+            const pos = getMousePos(e);
+            rect = { x: startX, y: startY, w: pos.x - startX, h: pos.y - startY };
+        };
+
+        function getMousePos(e) {
+            const r = canvas.getBoundingClientRect();
+            // Scale mouse coordinates to match image resolution
+            return {
+                x: (e.clientX - r.left) * (canvas.width / r.width),
+                y: (e.clientY - r.top) * (canvas.height / r.height)
+            };
+        }
+
+        async function processSelection() {
+            const fileInput = document.getElementById('imageLoader');
+            const formData = new FormData();
+            formData.append("file", fileInput.files[0]);
+            formData.append("box", JSON.stringify(rect));
+
+            const response = await fetch('/api2/upload-crop', {
+            method: 'POST',
+            body: formData
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.detail || "Server Error");
+        }
+
+        const data = await response.json();
+            document.getElementById('result').innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+        }
+    </script>
+</body>
+</html>
