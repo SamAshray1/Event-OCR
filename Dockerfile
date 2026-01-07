@@ -18,6 +18,8 @@ RUN pip install --upgrade pip \
 
 RUN python3 -c "import easyocr; easyocr.Reader(['en'], gpu=False)"
 
+RUN python -c "from transformers import AutoModelForCausalLM; AutoModelForCausalLM.from_pretrained('vikhyatk/moondream2', trust_remote_code=True)"
+
 COPY . ./app
 
 EXPOSE 8000

@@ -6,6 +6,9 @@ opencv-python
 dateparser
 ics
 pydantic
-
---extra-index-url https://download.pytorch.org/whl/cpu
+transformers
+einops
+pillow
+torch
+python-multipart
 easyocr
