@@ -1,14 +1,13 @@
 fastapi
 uvicorn
 python-multipart
-pytesseract
-opencv-python
-dateparser
-ics
 pydantic
 transformers
 einops
 pillow
-torch
-python-multipart
-easyocr
+# We use the CPU-specific torch to keep the image slim
+torch --index-url https://download.pytorch.org/whl/cpu
+accelerate
+bitsandbytes
+dateparser
+ics

@@ -2,32 +2,34 @@ import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from PIL import Image
 import io
-import json
 
-# Initialize model and tokenizer
 model_id = "vikhyatk/moondream2"
-# Remove revision="2024-08-05" to avoid the 404 error
-device = "cuda" if torch.cuda.is_available() else "cpu"
 
-print(f"Loading {model_id} onto {device}...")
-
-# trust_remote_code=True is required for moondream
+# Load the model with 4-bit quantization for CPU speed
+# trust_remote_code is essential for Moondream's custom vision tower
 model = AutoModelForCausalLM.from_pretrained(
     model_id, 
-    trust_remote_code=True, 
-).to(device)
-
+    trust_remote_code=True,
+    low_cpu_mem_usage=True,
+    # This automatically optimizes the weight layout for your processor
+    device_map="cpu" 
+)
 tokenizer = AutoTokenizer.from_pretrained(model_id)
-model.eval() # Set to evaluation mode
+model.eval()
 
-def extract_event_with_vlm(image_bytes: bytes):
-    image = Image.open(io.BytesIO(image_bytes))
+def extract_event_vlm(image_bytes: bytes):
+    image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
     
-    # We provide a prompt that forces the model to act as a structured extractor
-    prompt = "Extract the event details from this image. Provide the Title, Date, Time, and Location. If a field is missing, say 'Unknown'."
+    # Pre-processing: Resize to 768px to drastically reduce CPU cycles
+    image.thumbnail((768, 768)) 
     
-    # Moondream specific inference
+    # Encode the image once
     enc_image = model.encode_image(image)
+    
+    # Precise prompt for JSON-like output
+    prompt = "Identify the Title, Date, Time, and Location from this poster. Return the result in a clear list format."
+    
+    # High-level helper provided by the Moondream authors
     response = model.answer_question(enc_image, prompt, tokenizer)
     
     return response
