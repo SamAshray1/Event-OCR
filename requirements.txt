@@ -1,13 +1,5 @@
 fastapi
 uvicorn
-python-multipart
-pydantic
-transformers
-einops
+requests
+# llama-cpp-python==0.2.56
 pillow
-# We use the CPU-specific torch to keep the image slim
-torch --index-url https://download.pytorch.org/whl/cpu
-accelerate
-bitsandbytes
-dateparser
-ics

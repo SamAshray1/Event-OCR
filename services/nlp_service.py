@@ -1,6 +1,6 @@
 import re
 from dateparser.search import search_dates
-from app.models.event import EventResponse
+from models.event import EventResponse
 
 def extract_title(lines):
     for line in lines:

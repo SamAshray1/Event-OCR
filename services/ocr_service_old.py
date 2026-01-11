@@ -1,7 +1,7 @@
 import pytesseract
 import cv2
 import numpy as np
-from app.services.ocr_service import perform_ocr
+from services.ocr_service import perform_ocr
 
 def extract_text(image_bytes: bytes) -> str:
     image_np = np.frombuffer(image_bytes, np.uint8)

@@ -1,5 +1,5 @@
 from ics import Calendar, Event
-from app.models.event import EventResponse
+from models.event import EventResponse
 from datetime import timedelta
 
 def generate_ics(event: EventResponse) -> str:

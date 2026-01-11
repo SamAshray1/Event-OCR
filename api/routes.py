@@ -1,15 +1,15 @@
 import json
 from fastapi import APIRouter, UploadFile, File, HTTPException
 from fastapi.responses import HTMLResponse
-from app.services.ocr_service import perform_ocr
-from app.services.nlp_service import parse_event
-from app.models.event import EventResponse
-from app.services.calendar_ics import generate_ics
+from services.ocr_service import perform_ocr
+from services.nlp_service import parse_event
+from models.event import EventResponse
+from services.calendar_ics import generate_ics
 from fastapi import Form
 from fastapi import FastAPI, Request
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
-from app.services.ocr_service_old import extract_text_from_crop
+from services.ocr_service_old import extract_text_from_crop
 
 
 app = FastAPI()

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, UploadFile, File, Form, Request
 from fastapi.templating import Jinja2Templates
-from app.services.vision_service import extract_event_with_vlm, extract_from_crop_vlm
+from services.vision_service_new import extract_event_with_vlm, extract_from_crop_vlm
 from fastapi.responses import HTMLResponse
 
 router = APIRouter(prefix="/vlm")
