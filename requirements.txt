@@ -1,5 +1,8 @@
 fastapi
 uvicorn
-requests
-# llama-cpp-python==0.2.56
+torch
+transformers
 pillow
+huggingface_hub
+numpy
+accelerate

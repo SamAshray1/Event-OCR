@@ -1,40 +1,26 @@
+from huggingface_hub import snapshot_download
 import os
-import sys
-import requests
-from pathlib import Path
 
-MODEL_URL = (
-    "https://huggingface.co/"
-    "TheBloke/llava-phi-3-mini-GGUF/resolve/main/"
-    "llava-phi-3-mini.Q4_K_M.gguf"
-)
-
-MODEL_DIR = Path(os.getenv("MODEL_DIR", "/models"))
-MODEL_PATH = MODEL_DIR / "llava.gguf"
-
+MODEL_ID = "vikhyatk/moondream2"
+MODEL_DIR = "/app/models/moondream2"
 
 def download_model():
-    MODEL_DIR.mkdir(parents=True, exist_ok=True)
+    """
+    Downloads Moondream2 ONNX artifacts if not already present.
+    Uses HF_TOKEN automatically if set.
+    """
+    if os.path.exists(MODEL_DIR) and os.listdir(MODEL_DIR):
+        return MODEL_DIR
 
-    if MODEL_PATH.exists() and MODEL_PATH.stat().st_size > 100_000_000:
-        print(f"✅ Model already exists: {MODEL_PATH}")
-        return MODEL_PATH
+    snapshot_download(
+        repo_id=MODEL_ID,
+        local_dir=MODEL_DIR,
+        local_dir_use_symlinks=False,
+        allow_patterns=[
+            "*.onnx",
+            "*.json",
+            "*.txt"
+        ]
+    )
 
-    print(f"⬇️ Downloading model to {MODEL_PATH}")
-
-    with requests.get(MODEL_URL, stream=True, timeout=60) as r:
-        r.raise_for_status()
-        with open(MODEL_PATH, "wb") as f:
-            for chunk in r.iter_content(chunk_size=1024 * 1024):
-                if chunk:
-                    f.write(chunk)
-
-    if MODEL_PATH.stat().st_size < 100_000_000:
-        raise RuntimeError("❌ Model download incomplete or corrupted")
-
-    print("✅ Model downloaded successfully")
-    return MODEL_PATH
-
-
-if __name__ == "__main__":
-    download_model()
+    return MODEL_DIR

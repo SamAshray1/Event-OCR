@@ -1,96 +1,74 @@
-from PIL import Image
 import io
-import base64
-import os
-from llama_cpp import Llama
-from models.model_utils import download_model
+import torch
+from transformers import AutoModelForCausalLM, AutoTokenizer
+from PIL import Image
 
-MODEL_PATH = download_model()
+MODEL_ID = "vikhyatk/moondream2"
 
-llm = Llama(
-    model_path=str(MODEL_PATH),
-    n_threads=os.cpu_count(),
-    n_ctx=4096,
-    verbose=False,
+# ---------------------------
+# CPU OPTIMIZATION (VERY IMPORTANT)
+# ---------------------------
+torch.set_num_threads(4)
+torch.set_num_interop_threads(4)
+torch.backends.quantized.engine = "qnnpack"
+
+# ---------------------------
+# Load model (CPU only)
+# ---------------------------
+model = AutoModelForCausalLM.from_pretrained(
+    MODEL_ID,
+    trust_remote_code=True,
+    low_cpu_mem_usage=True,
+    device_map="cpu",
+    torch_dtype=torch.float32
 )
-# ==========================
+
+tokenizer = AutoTokenizer.from_pretrained(MODEL_ID)
+model.eval()
+
+# TorchScript vision tower (safe + big speedup)
+model.vision_tower = torch.jit.script(model.vision_tower)
+
+# ---------------------------
 # Helpers
-# ==========================
+# ---------------------------
+def _load_image(image_bytes: bytes):
+    img = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+    img.thumbnail((512, 512))  # CRITICAL for Docker CPU
+    return img
 
-def _image_to_base64(image: Image.Image) -> str:
-    """
-    Convert PIL Image → base64 PNG
-    """
-    buf = io.BytesIO()
-    image.save(buf, format="PNG")
-    return base64.b64encode(buf.getvalue()).decode("utf-8")
-
-
-def _run_vlm(prompt: str, image: Image.Image) -> str:
-    """
-    Send image + prompt to llama.cpp VLM
-    """
-    image_b64 = _image_to_base64(image)
-
-    response = llm.create_chat_completion(
-        messages=[
-            {
-                "role": "user",
-                "content": [
-                    {"type": "text", "text": prompt},
-                    {
-                        "type": "image_url",
-                        "image_url": {
-                            "url": f"data:image/png;base64,{image_b64}"
-                        },
-                    },
-                ],
-            }
-        ],
-        temperature=0.1,
-        max_tokens=256,
-    )
-
-    return response["choices"][0]["message"]["content"]
-
-
-# ==========================
+# ---------------------------
 # Public API
-# ==========================
+# ---------------------------
+def extract_event_with_vlm(image_bytes: bytes):
+    image = _load_image(image_bytes)
 
-def extract_event_vlm(image_bytes: bytes) -> str:
-    """
-    Extract Title, Date, Time, Location from a poster
-    """
+    with torch.inference_mode():
+        image_embeds = model.encode_image(image)
+        prompt = (
+            "Identify the Title, Date, Time, and Location from this poster. "
+            "Return the result in a clear list format."
+        )
+        return model.answer_question(
+            image_embeds,
+            prompt,
+            tokenizer,
+            max_new_tokens=64
+        )
+
+
+def extract_from_crop_vlm(image_bytes: bytes, x, y, w, h):
     image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
-
-    # CPU optimization
-    image.thumbnail((768, 768))
-
-    prompt = (
-        "Identify the event details from this poster.\n"
-        "Return the following fields clearly:\n"
-        "- Title\n"
-        "- Date\n"
-        "- Time\n"
-        "- Location"
-    )
-
-    return _run_vlm(prompt, image)
-
-
-def extract_from_crop_vlm(image_bytes: bytes, x, y, w, h) -> str:
-    """
-    OCR-like exact text extraction from a cropped region
-    """
-    full_img = Image.open(io.BytesIO(image_bytes)).convert("RGB")
-
     x1, y1 = max(0, x), max(0, y)
     x2, y2 = x1 + abs(w), y1 + abs(h)
+    crop = image.crop((x1, y1, x2, y2))
+    crop.thumbnail((512, 512))
 
-    cropped = full_img.crop((x1, y1, x2, y2))
-    cropped.thumbnail((768, 768))
-
-    prompt = "Read the text in this image exactly as it appears."
-
-    return _run_vlm(prompt, cropped)
+    with torch.inference_mode():
+        image_embeds = model.encode_image(crop)
+        return model.answer_question(
+            image_embeds,
+            "Read the text in this image exactly as it appears.",
+            tokenizer,
+            max_new_tokens=64
+        )
