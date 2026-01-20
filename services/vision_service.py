@@ -10,10 +10,7 @@ model_id = "vikhyatk/moondream2"
 model = AutoModelForCausalLM.from_pretrained(
     model_id, 
     trust_remote_code=True,
-    low_cpu_mem_usage=True,
-    # This automatically optimizes the weight layout for your processor
-    device_map="cpu" 
-)
+    low_cpu_mem_usage=True)
 tokenizer = AutoTokenizer.from_pretrained(model_id)
 model.eval()
 

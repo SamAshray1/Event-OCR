@@ -2,23 +2,21 @@ FROM python:3.10-slim
 
 WORKDIR /app
 
-# System deps required by torch + PIL
+# Minimal system dependencies for torch + transformers
 RUN apt-get update && apt-get install -y \
-    git \
     libglib2.0-0 \
-    libsm6 \
-    libxrender1 \
-    libxext6 \
     && rm -rf /var/lib/apt/lists/*
 
-# Prevent torch thread explosion in Docker
-ENV OMP_NUM_THREADS=4
-ENV MKL_NUM_THREADS=4
-ENV TOKENIZERS_PARALLELISM=false
+# Prevent torch thread explosion in containers
+ENV OMP_NUM_THREADS=4 \
+    MKL_NUM_THREADS=4 \
+    TOKENIZERS_PARALLELISM=false
 
+# Install Python deps
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Copy application
 COPY . .
 
-CMD ["python", "main.py"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

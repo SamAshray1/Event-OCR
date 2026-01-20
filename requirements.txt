@@ -3,6 +3,5 @@ uvicorn
 torch
 transformers
 pillow
-huggingface_hub
 numpy
-accelerate
+python-multipart
