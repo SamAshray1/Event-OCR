@@ -24,11 +24,12 @@ def extract_event_vlm(image_bytes: bytes):
     enc_image = model.encode_image(image)
     
     # Precise prompt for JSON-like output
-    prompt = "Identify the Title, Date, Time, and Location from this poster. Return the result in a clear list format."
+    prompt = "Identify the Title, Date, Time, and Location from this poster. Return the result in a json format."
     
     # High-level helper provided by the Moondream authors
     response = model.answer_question(enc_image, prompt, tokenizer)
-    
+    # print(response)
+
     return response
 
 def extract_from_crop_vlm(image_bytes: bytes, x, y, w, h):

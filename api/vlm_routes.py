@@ -2,11 +2,13 @@ from fastapi import APIRouter, UploadFile, File, Request
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
 
+from services.date_utils import parse_human_date
+from services.time_utils import parse_time_range
 from services.vision_service import (
     extract_event_vlm,
     extract_from_crop_vlm
 )
-from services.event_parser import parse_event_from_text
+from services.event_parser import parse_event_from_json_string
 from services.google_calendar import create_google_calendar_link
 
 import json
@@ -45,16 +47,25 @@ async def process_vlm(
     else:
         vlm_output = extract_event_vlm(content)
 
-    # ---- Parse event fields ----
-    event = parse_event_from_text(vlm_output)
+    print("VLM out:", vlm_output)
+    print("Start parsing")
+
+    event = parse_event_from_json_string(vlm_output)
     # event = { title, date, time, location }
 
-    # ---- Create Google Calendar link ----
+    print(event)
+    print("Start gcal link")
+
+    date_iso = parse_human_date(event["date"])
+    start, end, overnight = parse_time_range(event["time"])
+
     gcal_link = create_google_calendar_link(
         title=event["title"],
-        date=event["date"],
-        time=event["time"],
+        date=date_iso,
+        start_time=start,
+        end_time=end,
         location=event["location"],
+        overnight=overnight,
     )
 
     return {

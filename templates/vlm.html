@@ -92,7 +92,7 @@
                 const response = await fetch('/vlm/process', { method: 'POST', body: formData });
                 const data = await response.json();
                 document.getElementById('result-box').style.display = "block";
-                document.getElementById('raw-output').innerText = data.raw_vlm_output;
+                document.getElementById('raw-output').innerText = data.google_calendar_link;
             } catch (err) {
                 alert("Error connecting to VLM service.");
             } finally {
