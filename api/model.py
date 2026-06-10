@@ -8,12 +8,11 @@ print("Loading Moondream model...")
 
 tokenizer = AutoTokenizer.from_pretrained(MODEL_ID)
 
-from transformers import AutoModelForCausalLM
-
 model = AutoModelForCausalLM.from_pretrained(
     MODEL_ID,
-    trust_remote_code=True
-)
+    trust_remote_code=True,
+    torch_dtype=torch.float32
+).eval()
 
 print("Model loaded successfully")
 

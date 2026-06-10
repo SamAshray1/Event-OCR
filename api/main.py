@@ -21,10 +21,10 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
     return templates.TemplateResponse(
-        "index.html",
-        {"request": request}
+        request=request,
+        name="index.html",
+        context={}
     )
-
 
 @app.post("/upload")
 async def upload_image(file: UploadFile = File(...)):
